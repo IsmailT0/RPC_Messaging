@@ -52,3 +52,14 @@ clean:
 	$(RM) -r $(OUT_DIR)
 	$(RM) core $(TARGETS)
 
+# Run targets
+run-server: $(SERVER)
+	./$(SERVER)
+
+run-client: $(CLIENT)
+	./$(CLIENT) localhost
+
+run-all: run-server run-client
+
+.PHONY: clean run-server run-client run-all
+
