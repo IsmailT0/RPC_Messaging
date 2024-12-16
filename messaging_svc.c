@@ -23,6 +23,7 @@ messaging_prog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 		RegisterRequest register_client_1_arg;
 		SendMessageRequest send_message_1_arg;
 		FetchMessageRequest fetch_message_1_arg;
+		RegisterRequest deregister_client_1_arg;
 	} argument;
 	char *result;
 	xdrproc_t _xdr_argument, _xdr_result;
@@ -49,6 +50,12 @@ messaging_prog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 		_xdr_argument = (xdrproc_t) xdr_FetchMessageRequest;
 		_xdr_result = (xdrproc_t) xdr_FetchMessageResponse;
 		local = (char *(*)(char *, struct svc_req *)) fetch_message_1_svc;
+		break;
+
+	case deregister_client:
+		_xdr_argument = (xdrproc_t) xdr_RegisterRequest;
+		_xdr_result = (xdrproc_t) xdr_int;
+		local = (char *(*)(char *, struct svc_req *)) deregister_client_1_svc;
 		break;
 
 	default:

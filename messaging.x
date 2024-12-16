@@ -35,5 +35,6 @@ program MESSAGING_PROG {
         int register_client(RegisterRequest) = 1;
         int send_message(SendMessageRequest) = 2;
         FetchMessageResponse fetch_message(FetchMessageRequest) = 3;
+        int deregister_client(RegisterRequest) = 4;
     } = 1;
 } = 0x20000001;

@@ -66,6 +66,9 @@ extern  int * send_message_1_svc(SendMessageRequest *, struct svc_req *);
 #define fetch_message 3
 extern  FetchMessageResponse * fetch_message_1(FetchMessageRequest *, CLIENT *);
 extern  FetchMessageResponse * fetch_message_1_svc(FetchMessageRequest *, struct svc_req *);
+#define deregister_client 4
+extern  int * deregister_client_1(RegisterRequest *, CLIENT *);
+extern  int * deregister_client_1_svc(RegisterRequest *, struct svc_req *);
 extern int messaging_prog_1_freeresult (SVCXPRT *, xdrproc_t, caddr_t);
 
 #else /* K&R C */
@@ -78,6 +81,9 @@ extern  int * send_message_1_svc();
 #define fetch_message 3
 extern  FetchMessageResponse * fetch_message_1();
 extern  FetchMessageResponse * fetch_message_1_svc();
+#define deregister_client 4
+extern  int * deregister_client_1();
+extern  int * deregister_client_1_svc();
 extern int messaging_prog_1_freeresult ();
 #endif /* K&R C */
 

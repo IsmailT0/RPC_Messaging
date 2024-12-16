@@ -7,6 +7,7 @@
 // Structure to hold registered clients
 typedef struct ClientNode {
     char client_name[100];
+    int active;  // 1 for active, 0 for inactive
     struct ClientNode *next;
 } ClientNode;
 
@@ -33,7 +34,9 @@ int *register_client_1_svc(RegisterRequest *argp, struct svc_req *rqstp) {
     ClientNode *cur = clients;
     while (cur != NULL) {
         if (strcmp(cur->client_name, argp->client_name) == 0) {
-            result = -1; // Client name already exists
+            cur->active = 1;  // Reactivate existing client
+            result = 1;
+            printf("Client '%s' reactivated.\n", argp->client_name);
             return &result;
         }
         cur = cur->next;
@@ -46,6 +49,7 @@ int *register_client_1_svc(RegisterRequest *argp, struct svc_req *rqstp) {
         exit(1);
     }
     strcpy(new_client->client_name, argp->client_name);
+    new_client->active = 1;
     new_client->next = clients;
     clients = new_client;
 
@@ -55,8 +59,23 @@ int *register_client_1_svc(RegisterRequest *argp, struct svc_req *rqstp) {
     return &result;
 }
 
+// Add new deregister function
+int *deregister_client_1_svc(RegisterRequest *argp, struct svc_req *rqstp) {
+    static int result;
+    result = 0;
 
-
+    ClientNode *cur = clients;
+    while (cur != NULL) {
+        if (strcmp(cur->client_name, argp->client_name) == 0) {
+            cur->active = 0;  // Just mark as inactive instead of removing
+            printf("Client '%s' deregistered.\n", argp->client_name);
+            result = 1;
+            break;
+        }
+        cur = cur->next;
+    }
+    return &result;
+}
 
 /* Send a message */
 int *send_message_1_svc(SendMessageRequest *argp, struct svc_req *rqstp) {
@@ -151,53 +170,19 @@ FetchMessageResponse *fetch_message_1_svc(FetchMessageRequest *argp, struct svc_
     }
 
     MessageNode *cur = messages;
-    MessageNode *prev = NULL;
-    MessageNode *temp = NULL;
     
-    // Create temporary array to store messages in correct order
-    MessageNode *temp_messages[100];
-    msg_count = 0;
-    
-    // First pass: collect matching messages
+    // Just collect matching messages without removing them
     while (cur != NULL) {
         if (strcmp(cur->recipient, argp->client_name) == 0) {
-            temp_messages[msg_count++] = cur;
+            msg_array[msg_count].sender = strdup(cur->sender);
+            msg_array[msg_count].recipient = strdup(cur->recipient);
+            msg_array[msg_count].text = strdup(cur->text);
+            msg_array[msg_count].timestamp = strdup(cur->timestamp);
+            msg_count++;
         }
         cur = cur->next;
     }
     
-    // Copy messages in correct order
-    for (int i = 0; i < msg_count; i++) {
-        msg_array[i].sender = strdup(temp_messages[i]->sender);
-        msg_array[i].recipient = strdup(temp_messages[i]->recipient);
-        msg_array[i].text = strdup(temp_messages[i]->text);
-        msg_array[i].timestamp = strdup(temp_messages[i]->timestamp);
-    }
-    
-    // Remove the messages from the list
-    cur = messages;
-    prev = NULL;
-    while (cur != NULL) {
-        if (strcmp(cur->recipient, argp->client_name) == 0) {
-            MessageNode *to_free = cur;
-            if (prev == NULL) {
-                messages = cur->next;
-                cur = messages;
-            } else {
-                prev->next = cur->next;
-                cur = cur->next;
-            }
-            if (to_free == messages_tail) {
-                messages_tail = prev;
-            }
-            free(to_free);
-        } else {
-            prev = cur;
-            cur = cur->next;
-        }
-    }
-    
-    // Set response
     result.messageArray.messages.messages_val = msg_array;
     result.messageArray.messages.messages_len = msg_count;
     result.messageArray.count = msg_count;

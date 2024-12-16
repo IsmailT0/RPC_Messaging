@@ -136,6 +136,13 @@ void messaging_prog_1(char *host)
 
         case 4:
         { // Exit
+            if (registered) {
+                RegisterRequest req = {client_name};
+                int *result = deregister_client_1(&req, clnt);
+                if (result != NULL && *result == 1) {
+                    printf("Successfully deregistered.\n");
+                }
+            }
             printf("Exiting. Goodbye!\n");
             clnt_destroy(clnt);
             exit(0);
