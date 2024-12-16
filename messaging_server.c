@@ -158,10 +158,9 @@ int *send_message_1_svc(SendMessageRequest *argp, struct svc_req *rqstp) {
 /* Fetch a message */
 FetchMessageResponse *fetch_message_1_svc(FetchMessageRequest *argp, struct svc_req *rqstp) {
     static FetchMessageResponse result;
-    static Message msg_array[100];  // Assuming max 100 messages
+    static Message msg_array[100];
     int msg_count = 0;
     
-    // Clear previous response
     memset(&result, 0, sizeof(FetchMessageResponse));
     
     if (!argp || !argp->client_name) {
@@ -170,24 +169,47 @@ FetchMessageResponse *fetch_message_1_svc(FetchMessageRequest *argp, struct svc_
     }
 
     MessageNode *cur = messages;
+    MessageNode *prev = NULL;
+    MessageNode *next = NULL;
     
-    // Just collect matching messages without removing them
+    // Collect messages and remove them
     while (cur != NULL) {
+        next = cur->next;
+        
         if (strcmp(cur->recipient, argp->client_name) == 0) {
+            // Copy message to response array
             msg_array[msg_count].sender = strdup(cur->sender);
             msg_array[msg_count].recipient = strdup(cur->recipient);
             msg_array[msg_count].text = strdup(cur->text);
             msg_array[msg_count].timestamp = strdup(cur->timestamp);
             msg_count++;
+            
+            // Remove message from list
+            if (prev == NULL) {
+                messages = next;
+            } else {
+                prev->next = next;
+            }
+            
+            // Update tail if needed
+            if (cur == messages_tail) {
+                messages_tail = prev;
+            }
+            
+            free(cur);
+            cur = next;
+            continue;
         }
-        cur = cur->next;
+        
+        prev = cur;
+        cur = next;
     }
     
     result.messageArray.messages.messages_val = msg_array;
     result.messageArray.messages.messages_len = msg_count;
     result.messageArray.count = msg_count;
     
-    printf("Found %d messages for '%s'.\n", msg_count, argp->client_name);
+    printf("Fetched and removed %d messages for '%s'.\n", msg_count, argp->client_name);
     return &result;
 }
 
