@@ -4,10 +4,10 @@
 #include <time.h>
 #include "messaging.h"
 
-// Structure to hold registered clients
+// Update ClientNode structure
 typedef struct ClientNode {
     char client_name[100];
-    int active;  // 1 for active, 0 for inactive
+    int is_online;
     struct ClientNode *next;
 } ClientNode;
 
@@ -25,41 +25,42 @@ ClientNode *clients = NULL;
 MessageNode *messages = NULL;
 MessageNode *messages_tail = NULL;  // Track the end of messages list
 
-/* Register a client */
+//register client 
 int *register_client_1_svc(RegisterRequest *argp, struct svc_req *rqstp) {
     static int result;
-    result = 0; // Default to failure
+    result = 0;
 
-    // Check if the client name is already registered
     ClientNode *cur = clients;
     while (cur != NULL) {
         if (strcmp(cur->client_name, argp->client_name) == 0) {
-            cur->active = 1;  // Reactivate existing client
+            if (cur->is_online) {
+                printf("Client '%s' is already online.\n", argp->client_name);
+                return &result;
+            }
+            cur->is_online = 1;
+            printf("Client '%s' is back online.\n", argp->client_name);
             result = 1;
-            printf("Client '%s' reactivated.\n", argp->client_name);
             return &result;
         }
         cur = cur->next;
     }
 
-    // Add the new client to the linked list
     ClientNode *new_client = (ClientNode *)malloc(sizeof(ClientNode));
     if (!new_client) {
         perror("Failed to allocate memory for new client");
         exit(1);
     }
     strcpy(new_client->client_name, argp->client_name);
-    new_client->active = 1;
+    new_client->is_online = 1;
     new_client->next = clients;
     clients = new_client;
 
     printf("Client '%s' registered successfully.\n", argp->client_name);
-
-    result = 1; // Success
+    result = 1;
     return &result;
 }
 
-// Add new deregister function
+// Modify deregister_client_1_svc
 int *deregister_client_1_svc(RegisterRequest *argp, struct svc_req *rqstp) {
     static int result;
     result = 0;
@@ -67,8 +68,8 @@ int *deregister_client_1_svc(RegisterRequest *argp, struct svc_req *rqstp) {
     ClientNode *cur = clients;
     while (cur != NULL) {
         if (strcmp(cur->client_name, argp->client_name) == 0) {
-            cur->active = 0;  // Just mark as inactive instead of removing
-            printf("Client '%s' deregistered.\n", argp->client_name);
+            cur->is_online = 0;
+            printf("Client '%s' is now offline.\n", argp->client_name);
             result = 1;
             break;
         }
@@ -105,6 +106,7 @@ int *send_message_1_svc(SendMessageRequest *argp, struct svc_req *rqstp) {
         }
         cur = cur->next;
     }
+
 
     if (!recipient_found) {
         printf("Recipient '%s' not found.\n", argp->recipient);
